@@ -17,3 +17,10 @@ Annual consumption rising from 151 terawatt-hours (TWh) in 2025 to 263 TWh in 20
 
 Me:
 With High estimate (+1.8%/yr) 258.5 TWh in 2050.
+
+Grid by the source:
+Live info: https://live.gridwatch.ca/home-page.html
+
+https://www.ieso.ca/Corporate-IESO/Media/Year-End-Data#yearenddata
+
+https://apps.cer-rec.gc.ca/ftrppndc/dflt.aspx?GoCTemplateCulture=en-CA
