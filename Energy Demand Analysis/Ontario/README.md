@@ -4,6 +4,11 @@ https://www.kaggle.com/datasets/jacobsharples/ontario-electricity-demand?resourc
 Data source used to combine 2002-2026 data:
 https://reports-public.ieso.ca/public/Demand/
 
+Ontario Demand vs Market Demand:
+The higher Market Demand typically reflects that Ontario is often a net exporter of electricity, so the market needs to account for power flowing out of province while also meeting local demand.
+
+Ontario Demand is the more accurate metric for local consumption, while Market demand includes exports and ancillary services less relevant to local generation capacity planning.
+
 Forecast from IESO:
 https://www.ieso.ca/Corporate-IESO/Media/News-Releases/2024/10/Electricity-Demand-in-Ontario-to-Grow-by-75-per-cent-by-2050
 
