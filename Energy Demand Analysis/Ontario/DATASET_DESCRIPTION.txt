@@ -1,0 +1,21 @@
+ONTARIO HOURLY ELECTRICITY DEMAND 2002-2026
+
+ABOUT IESO
+The Independent Electricity System Operator (IESO) manages Ontario's electricity grid, balancing supply and demand in real-time. This dataset contains hourly electricity demand data from IESO spanning 2002-2026.
+
+DATASET COLUMNS
+Date: Day of measurement (YYYY-MM-DD)
+Hour: Hour of day (1-24, where Hour 1 = 12am-1am). Eastern Standard Time year-round.
+Ontario Demand: Average electricity consumption within Ontario during each hour, in MW (megawatts). Reflects actual local demand only.
+Market Demand: Average electricity cleared through Ontario's wholesale market during each hour, in MW (megawatts). Includes exports to US and neighboring provinces. Typically 1-5% higher than Ontario Demand due to inter-provincial power flows.
+
+DATA SOURCE
+2002-2023: Kaggle dataset (jacobsharples/ontario-electricity-demand)
+2024-2026: IESO direct reports consolidation
+https://reports-public.ieso.ca/public/Demand/
+
+USEFUL FOR
+- Analyzing electricity consumption patterns and seasonal trends
+- Grid capacity planning and forecasting
+- Energy market analysis
+- Time series analysis and machine learning
