@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from sklearn.linear_model import LinearRegression
@@ -9,34 +8,13 @@ from sklearn.pipeline import make_pipeline
 
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
-# Load yearly demand — drop partial years (2002 starts May, 2026 is incomplete)
+# Load yearly demand — drop partial years (2002 and 2026)
 df = pd.read_csv('./Energy Demand Analysis/Ontario/data/Yearly_Market_Demand_2002-2026.csv')
 df = df[(df['Year'] >= 2003) & (df['Year'] <= 2025)].copy()
 df['Year'] = df['Year'].astype(int)
 df['TWh'] = df['Total_Market_Demand'] / 1e6  # MWh → TWh
 
-# Fit three models on historical data
-years_hist = df['Year'].values
-twh = df['TWh'].values
-all_years = np.arange(2003, 2051)
-
-X_hist = years_hist.reshape(-1, 1)
-X_all = all_years.reshape(-1, 1)
-
-# 1. Linear regression
-lin = LinearRegression().fit(X_hist, twh)
-lin_pred = lin.predict(X_all)
-
-# 2. Polynomial degree-2
-poly2 = make_pipeline(PolynomialFeatures(2), LinearRegression())
-poly2.fit(X_hist, twh)
-poly2_pred = poly2.predict(X_all)
-
-# 3. Holt's exponential smoothing (damped additive trend)
-holt = ExponentialSmoothing(twh, trend='add', damped_trend=True,
-                            initialization_method='estimated').fit()
-
-# Create High scenario forecast (2025-2050 at +1.9%/yr growth)
+# Create scenario forecast (2025-2050 at +1.9%/yr growth)
 base_2025 = df.loc[df['Year'] == 2025, 'TWh'].values[0]
 future_years = np.arange(2025, 2051)
 high_rate = 0.019
@@ -71,7 +49,7 @@ combined_demand = pd.concat([historical_demand, forecast_demand], ignore_index=T
 # Interactive Plotly Chart: Generation by Source + Demand Forecast
 fig = go.Figure()
 
-# Define colors for Plotly chart - natural, muted tones
+# Define colors for Plotly chart
 colors_map_plotly = {
     'Hydro / Wave / Tidal': '#5B9BD5',
     'Wind': '#B0C4DE',
@@ -80,8 +58,7 @@ colors_map_plotly = {
     'Uranium': '#7CB342',
     'Natural Gas': '#A9A9A9',
     'Oil': '#CD5C5C',
-    'Coal & Coke': '#000000',
-    'Other': '#808080'
+    'Coal & Coke': '#000000'
 }
 
 # Pre-assign consistent colors for all sources
@@ -137,7 +114,7 @@ fig.add_annotation(
 
 fig.add_annotation(
     x=2032, y=fig.data[-1]['y'].max() * 0.90,
-    text='Forecast',
+    text='Forecast (1.9%/yr growth)',
     showarrow=False,
     font=dict(size=12, color='darkred'),
     bgcolor='white',
