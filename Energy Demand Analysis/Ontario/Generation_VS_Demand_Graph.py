@@ -6,6 +6,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import make_pipeline
 import json
+from textwrap import wrap
 
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
@@ -171,7 +172,9 @@ min_demand = combined_demand['Demand (TWh)'].min()
 for year, event in historical_events.items():
     if 2005 <= year <= 2050:
         event_years.append(year)
-        event_names.append(event)
+        # Format event text with word wrapping for better hover display
+        formatted_event = f"<b>{year}</b><br>" + "<br>".join(wrap(event, width=60))
+        event_names.append(formatted_event)
         event_y_positions.append(min_demand * 0.50)  # Position lower
 
 fig.add_trace(go.Scatter(

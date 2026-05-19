@@ -24,3 +24,5 @@ Live info: https://live.gridwatch.ca/home-page.html
 https://www.ieso.ca/Corporate-IESO/Media/Year-End-Data#yearenddata
 
 https://apps.cer-rec.gc.ca/ftrppndc/dflt.aspx?GoCTemplateCulture=en-CA
+
+https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/2026/canada-energy-futures-2026.pdf?utm_source=chatgpt.com
