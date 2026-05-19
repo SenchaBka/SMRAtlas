@@ -5,6 +5,7 @@ from plotly.subplots import make_subplots
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import make_pipeline
+import json
 
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
@@ -156,14 +157,9 @@ fig.update_layout(
     )
 )
 
-# Define historical events by year
-historical_events = {
-    2008: "Financial Crisis",
-    2011: "Fukushima Incident",
-    2020: "COVID-19 Pandemic",
-    2025: "Net Zero Target Start",
-    # Add more events as needed
-}
+# Load historical events from JSON file
+with open('./Energy Demand Analysis/Ontario/data/historical_events.json', 'r') as f:
+    historical_events = {item['year']: item['event'] for item in json.load(f)}
 
 # Add event markers as scatter trace
 event_years = []
