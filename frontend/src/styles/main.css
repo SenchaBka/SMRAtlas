@@ -1,0 +1,73 @@
+/* ─── Reset & base ─────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f0f2f5;
+}
+
+/* ─── Card container ────────────────────────────────────────── */
+.card {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+}
+
+h1 {
+  font-size: 1.4rem;
+  margin-bottom: 1.25rem;
+  color: #222;
+}
+
+/* ─── Form controls ─────────────────────────────────────────── */
+input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+  outline: none;
+}
+
+input:focus {
+  border-color: #3a7bd5;
+}
+
+button {
+  width: 100%;
+  padding: 0.65rem;
+  font-size: 1rem;
+  background: #3a7bd5;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #2f66bb;
+}
+
+/* ─── Response area ─────────────────────────────────────────── */
+#response {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  color: #444;
+  min-height: 1.2rem;
+}
+
+#response.error {
+  color: #c0392b;
+}
