@@ -1,8 +1,16 @@
 {
   "name": "smratlas-frontend",
-  "private": true,
+  "description": "SMR Atlas frontend — energy demand lookup dashboard",
   "version": "0.0.1",
+  "private": true,
+  "license": "MIT",
+  "author": "Arsenii Buriak",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "packageManager": "npm@10.2.0",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
