@@ -95,14 +95,12 @@ fig.add_trace(go.Scatter(
     hovertemplate='<b>Demand</b><br>Demand: %{y:.2f} TWh<extra></extra>'
 ))
 
-# Load historical events to get nuclear event years
-with open('./Energy Demand Analysis/Ontario/data/historical_events.json', 'r') as f:
-    historical_events_list = json.load(f)
-    nuclear_years = [item['year'] for item in historical_events_list if 'nuclear' in item['event'].lower()]
+# Load nuclear events to get nuclear event years
+with open('./Energy Demand Analysis/Ontario/data/historical_events_nuclear.json', 'r') as f:
+    nuclear_events = {item['year']: item['event'] for item in json.load(f)}
 
 # Add nuclear-specific points ONLY on years with nuclear events, at TOP of uranium bar
-if nuclear_years:
-    nuclear_y_values = []
+if nuclear_events:
     year_columns = [col for col in gen_source_df.columns if isinstance(col, (int, float)) or str(col).isdigit()]
     
     # Calculate cumulative heights for uranium bar (sum of all bars below + uranium)
@@ -112,26 +110,30 @@ if nuclear_years:
         values = gen_source_twh.loc[source, year_columns].values
         if source == 'Uranium':
             uranium_idx = idx
-            cumulative += values  # Add uranium to cumulative
+            cumulative += values
         elif uranium_idx is None:
-            cumulative += values  # Add all sources BEFORE uranium
+            cumulative += values
     
-    # Get y-values only for nuclear event years
     nuclear_x = []
     nuclear_y = []
-    for year in nuclear_years:
+    nuclear_names = []
+    for year, event in nuclear_events.items():
         if year in years:
             year_idx = years.index(year)
             nuclear_x.append(year)
             nuclear_y.append(cumulative[year_idx])
+            formatted_event = f"<b>{year}</b><br>" + "<br>".join(wrap(event, width=60))
+            nuclear_names.append(formatted_event)
     
     fig.add_trace(go.Scatter(
         x=nuclear_x,
         y=nuclear_y,
         mode='markers',
         name='Nuclear Events',
-        marker=dict(size=7, color='#2E7D32', symbol='diamond'),  # Dark green
-        hovertemplate='<b>Nuclear Event</b><br>Year: %{x}<br>Generation: %{y:.2f} TWh<extra></extra>'
+        marker=dict(size=7, color='#2E7D32', symbol='diamond'),
+        hovertemplate='%{text}<extra></extra>',
+        text=nuclear_names,
+        showlegend=True
     ))
 
 # Add shaded regions for historical and forecast
