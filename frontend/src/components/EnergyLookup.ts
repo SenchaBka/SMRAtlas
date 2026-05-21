@@ -1,67 +1,123 @@
-/**
- * EnergyLookup.ts
- *
- * The single UI component for the Energy Demand Lookup card.
- * It owns:
- *   - references to the relevant DOM elements (input, button, response div)
- *   - event listeners (button click, Enter key)
- *   - UI state transitions: idle → loading → success / error
- *
- * It delegates all network work to `cityApi.ts` so this file stays focused
- * purely on presentation and user interaction.
- */
-
 import { fetchCityData } from '../api/cityApi';
+
+const MESSAGES = {
+  LOADING: 'Loading…',
+  EMPTY_INPUT: 'Please enter a city name.',
+  CONNECTION_ERROR: 'Could not connect to the server.',
+  TIMEOUT: 'Request timed out. Please try again.',
+} as const;
+
+const CONFIG = {
+  REQUEST_TIMEOUT_MS: 10000, // 10 seconds
+  MIN_INPUT_LENGTH: 1,
+} as const;
+
+/**
+ * EnergyLookup — UI component for the city energy demand lookup.
+*/
 
 export class EnergyLookup {
   private readonly cityInput: HTMLInputElement;
   private readonly submitBtn: HTMLButtonElement;
   private readonly responseEl: HTMLElement;
+  private isLoading = false; // track loading state to prevent double-submit
 
   constructor() {
     this.cityInput = this.getElement<HTMLInputElement>('cityInput');
     this.submitBtn = this.getElement<HTMLButtonElement>('submitBtn');
     this.responseEl = this.getElement<HTMLElement>('response');
 
+    // Add accessibility attributes
+    this.responseEl.setAttribute('role', 'status');
+    this.responseEl.setAttribute('aria-live', 'polite');
+
     this.bindEvents();
   }
 
-  // ── Event wiring ────────────────────────────────────────────
-
   private bindEvents(): void {
-    this.submitBtn.addEventListener('click', () => void this.submit());
+    this.submitBtn.addEventListener('click', () => void this.handleSubmit());
 
-    // Allow submitting with the Enter key
     this.cityInput.addEventListener('keydown', (e: KeyboardEvent) => {
-      if (e.key === 'Enter') void this.submit();
+      if (e.key === 'Enter' && !this.isLoading) {
+        e.preventDefault(); // prevent form submission if inside a <form>
+        void this.handleSubmit();
+      }
     });
   }
 
-  // ── Core action ─────────────────────────────────────────────
+  private async handleSubmit(): Promise<void> {
+    // Prevent double-submit
+    if (this.isLoading) return;
 
-  private async submit(): Promise<void> {
     const city = this.cityInput.value.trim();
 
-    if (!city) {
-      this.showError('Please enter a city name.');
+    // Validate input
+    if (city.length < CONFIG.MIN_INPUT_LENGTH) {
+      this.showError(MESSAGES.EMPTY_INPUT);
       return;
     }
 
+    // Disable input and button, show loading state
+    this.setLoading(true);
     this.showLoading();
 
     try {
-      const data = await fetchCityData(city);
+      // Fetch with timeout wrapper
+      const data = await this.fetchWithTimeout(
+        () => fetchCityData(city),
+        CONFIG.REQUEST_TIMEOUT_MS
+      );
       this.showSuccess(data.message);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not connect to the server.';
+      const message = this.extractErrorMessage(err);
       this.showError(message);
+    } finally {
+      // Always re-enable input and button
+      this.setLoading(false);
     }
   }
 
-  // ── UI state helpers ─────────────────────────────────────────
+
+  /**
+   * Wraps a Promise with a timeout. Rejects if the operation takes too long.
+   */
+  private async fetchWithTimeout<T>(
+    fn: () => Promise<T>,
+    timeoutMs: number
+  ): Promise<T> {
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(MESSAGES.TIMEOUT)), timeoutMs)
+    );
+    return Promise.race([fn(), timeout]);
+  }
+
+  /**
+   * Extract a human-readable error message from any thrown value.
+   * Handles Error objects, strings, and unknown types.
+   */
+  private extractErrorMessage(err: unknown): string {
+    if (err instanceof Error) {
+      return err.message || MESSAGES.CONNECTION_ERROR;
+    }
+    if (typeof err === 'string') {
+      return err;
+    }
+    return MESSAGES.CONNECTION_ERROR;
+  }
+
+  /**
+   * Enable/disable submit button and input field.
+   * Updates aria-busy for accessibility.
+   */
+  private setLoading(isLoading: boolean): void {
+    this.isLoading = isLoading;
+    this.submitBtn.disabled = isLoading;
+    this.cityInput.disabled = isLoading;
+    this.submitBtn.setAttribute('aria-busy', String(isLoading));
+  }
 
   private showLoading(): void {
-    this.responseEl.textContent = 'Loading…';
+    this.responseEl.textContent = MESSAGES.LOADING;
     this.responseEl.className = '';
   }
 
@@ -75,12 +131,19 @@ export class EnergyLookup {
     this.responseEl.className = 'error';
   }
 
-  // ── DOM helper ───────────────────────────────────────────────
-
-  /** Typed wrapper around `getElementById` that throws if the element is missing. */
+  /**
+   * Safely query a DOM element by ID with type safety.
+   * Throws immediately if the element is missing (fail-fast).
+   *
+   * @param id — the element's ID attribute
+   * @returns the element, typed as T
+   * @throws Error if the element is not found
+   */
   private getElement<T extends HTMLElement>(id: string): T {
     const el = document.getElementById(id) as T | null;
-    if (!el) throw new Error(`Element #${id} not found in the DOM.`);
+    if (!el) {
+      throw new Error(`Element #${id} not found in the DOM. Check index.html.`);
+    }
     return el;
   }
 }
