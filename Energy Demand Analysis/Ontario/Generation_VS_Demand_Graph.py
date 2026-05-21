@@ -84,16 +84,55 @@ for idx, source in enumerate(sources):
         hovertemplate='<b>%{fullData.name}</b><br>Generation: %{y:.2f} TWh<extra></extra>'
     ))
 
-# Add demand line overlay
+# Add demand line overlay (General Points)
 fig.add_trace(go.Scatter(
     x=combined_demand['Year'],
     y=combined_demand['Demand (TWh)'],
     mode='lines+markers',
-    name='Demand',
+    name='Demand (General)',
     line=dict(color='red', width=3),
-    marker=dict(size=6),
+    marker=dict(size=6, color='red'),
     hovertemplate='<b>Demand</b><br>Demand: %{y:.2f} TWh<extra></extra>'
 ))
+
+# Load historical events to get nuclear event years
+with open('./Energy Demand Analysis/Ontario/data/historical_events.json', 'r') as f:
+    historical_events_list = json.load(f)
+    nuclear_years = [item['year'] for item in historical_events_list if 'nuclear' in item['event'].lower()]
+
+# Add nuclear-specific points ONLY on years with nuclear events, at TOP of uranium bar
+if nuclear_years:
+    nuclear_y_values = []
+    year_columns = [col for col in gen_source_df.columns if isinstance(col, (int, float)) or str(col).isdigit()]
+    
+    # Calculate cumulative heights for uranium bar (sum of all bars below + uranium)
+    cumulative = np.zeros(len(years))
+    uranium_idx = None
+    for idx, source in enumerate(sources):
+        values = gen_source_twh.loc[source, year_columns].values
+        if source == 'Uranium':
+            uranium_idx = idx
+            cumulative += values  # Add uranium to cumulative
+        elif uranium_idx is None:
+            cumulative += values  # Add all sources BEFORE uranium
+    
+    # Get y-values only for nuclear event years
+    nuclear_x = []
+    nuclear_y = []
+    for year in nuclear_years:
+        if year in years:
+            year_idx = years.index(year)
+            nuclear_x.append(year)
+            nuclear_y.append(cumulative[year_idx])
+    
+    fig.add_trace(go.Scatter(
+        x=nuclear_x,
+        y=nuclear_y,
+        mode='markers',
+        name='Nuclear Events',
+        marker=dict(size=7, color='#2E7D32', symbol='diamond'),  # Dark green
+        hovertemplate='<b>Nuclear Event</b><br>Year: %{x}<br>Generation: %{y:.2f} TWh<extra></extra>'
+    ))
 
 # Add shaded regions for historical and forecast
 fig.add_vrect(x0=2005, x1=2025, fillcolor='lightblue', opacity=0.1, layer='below', line_width=0)
@@ -103,8 +142,10 @@ fig.add_vrect(x0=2025, x1=2050.5, fillcolor='lightcoral', opacity=0.1, layer='be
 fig.add_vline(x=2025, line_dash='dot', line_color='darkred', line_width=2, opacity=0.7)
 
 # Add annotations closer to the boundary line
+max_demand = combined_demand['Demand (TWh)'].max()
+
 fig.add_annotation(
-    x=2018, y=fig.data[-1]['y'].max() * 0.90,
+    x=2018, y=max_demand * 0.90,
     text='Historical Data',
     showarrow=False,
     font=dict(size=12, color='darkred'),
@@ -115,7 +156,7 @@ fig.add_annotation(
 )
 
 fig.add_annotation(
-    x=2032, y=fig.data[-1]['y'].max() * 0.90,
+    x=2032, y=max_demand * 0.90,
     text='Forecast (1.9%/yr growth)',
     showarrow=False,
     font=dict(size=12, color='darkred'),
