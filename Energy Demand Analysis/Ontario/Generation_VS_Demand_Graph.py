@@ -1,14 +1,8 @@
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.pipeline import make_pipeline
 import json
 from textwrap import wrap
-
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
 # Load yearly demand — drop partial years (2002 and 2026)
 df = pd.read_csv('./Energy Demand Analysis/Ontario/data/Yearly_Market_Demand_2002-2026.csv')
@@ -18,15 +12,12 @@ df['TWh'] = df['Total_Market_Demand'] / 1e6  # MWh → TWh
 
 # Create scenario forecast (2025-2050 at +1.9%/yr growth)
 base_2025 = df.loc[df['Year'] == 2025, 'TWh'].values[0]
-future_years = np.arange(2025, 2051)
 high_rate = 0.019
 
-rows = []
-for year in range(2025, 2051):
-    row = {'Year': year, 'Demand (TWh)': round(base_2025 * (1 + high_rate) ** (year - 2025), 1)}
-    rows.append(row)
-
-summary_by_year = pd.DataFrame(rows)
+summary_by_year = pd.DataFrame([
+    {'Year': year, 'Demand (TWh)': round(base_2025 * (1 + high_rate) ** (year - 2025), 1)}
+    for year in range(2025, 2051)
+])
 
 # Load Electricity Generation by Source
 gen_source_df = pd.read_excel('./Energy Demand Analysis/Ontario/data/Electricity_Generation_By_Source_Ontario.xlsx')
@@ -44,7 +35,7 @@ gen_source_twh = gen_source_df[year_columns] / 1000
 historical_demand = df[(df['Year'] >= 2005) & (df['Year'] <= 2024)][['Year', 'TWh']].copy()
 historical_demand.columns = ['Year', 'Demand (TWh)']
 
-forecast_demand = summary_by_year[summary_by_year['Year'] >= 2025].copy()
+forecast_demand = summary_by_year.copy()
 
 combined_demand = pd.concat([historical_demand, forecast_demand], ignore_index=True)
 
@@ -74,7 +65,6 @@ for source in sources:
 
 # Add stacked bars for each generation source
 for idx, source in enumerate(sources):
-    year_columns = [col for col in gen_source_df.columns if isinstance(col, (int, float)) or str(col).isdigit()]
     values = gen_source_twh.loc[source, year_columns].values
     fig.add_trace(go.Bar(
         x=years,
@@ -101,8 +91,6 @@ with open('./Energy Demand Analysis/Ontario/data/historical_events_nuclear.json'
 
 # Add nuclear-specific points ONLY on years with nuclear events, at TOP of uranium bar
 if nuclear_events:
-    year_columns = [col for col in gen_source_df.columns if isinstance(col, (int, float)) or str(col).isdigit()]
-    
     # Calculate cumulative heights for uranium bar (sum of all bars below + uranium)
     cumulative = np.zeros(len(years))
     uranium_idx = None
