@@ -176,8 +176,8 @@ fig.update_layout(
     barmode='stack',
     hovermode='closest',
     template='plotly_white',
-    width=1200,
-    height=600,
+    width=1400,
+    height=750,
     font=dict(size=11),
     legend=dict(
         yanchor='top',
