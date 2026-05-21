@@ -1,4 +1,5 @@
 import { fetchCityData } from '../api/cityApi';
+import { withTimeout, extractErrorMessage } from '../utils/network';
 
 const MESSAGES = {
   LOADING: 'Loading…',
@@ -62,14 +63,14 @@ export class EnergyLookup {
     this.showLoading();
 
     try {
-      // Fetch with timeout wrapper
-      const data = await this.fetchWithTimeout(
-        () => fetchCityData(city),
+      // Fetch with timeout wrapper (from shared utilities)
+      const data = await withTimeout(
+        fetchCityData(city),
         CONFIG.REQUEST_TIMEOUT_MS
       );
       this.showSuccess(data.message);
     } catch (err) {
-      const message = this.extractErrorMessage(err);
+      const message = this.getDisplayErrorMessage(err);
       this.showError(message);
     } finally {
       // Always re-enable input and button
@@ -77,33 +78,17 @@ export class EnergyLookup {
     }
   }
 
-
-  /**
-   * Wraps a Promise with a timeout. Rejects if the operation takes too long.
-   */
-  private async fetchWithTimeout<T>(
-    fn: () => Promise<T>,
-    timeoutMs: number
-  ): Promise<T> {
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(MESSAGES.TIMEOUT)), timeoutMs)
-    );
-    return Promise.race([fn(), timeout]);
-  }
+  // ── Helper: error extraction ─────────────────────────────────
 
   /**
    * Extract a human-readable error message from any thrown value.
-   * Handles Error objects, strings, and unknown types.
+   * Wraps the shared utility with a fallback for display.
    */
-  private extractErrorMessage(err: unknown): string {
-    if (err instanceof Error) {
-      return err.message || MESSAGES.CONNECTION_ERROR;
-    }
-    if (typeof err === 'string') {
-      return err;
-    }
-    return MESSAGES.CONNECTION_ERROR;
+  private getDisplayErrorMessage(err: unknown): string {
+    return extractErrorMessage(err, MESSAGES.CONNECTION_ERROR);
   }
+
+  // ── UI state helpers ─────────────────────────────────────────
 
   /**
    * Enable/disable submit button and input field.

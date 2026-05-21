@@ -1,4 +1,12 @@
-/** API endpoint from environment or localhost fallback */
+/**
+ * src/api/cityApi.ts
+ *
+ * Network layer for city energy demand lookups.
+ * Handles all communication with the backend /api/city endpoint.
+ * Delegates common network utilities to src/utils/network.ts.
+ */
+
+import { withTimeout, extractErrorMessage, isNonEmptyString, isValidLength } from '../utils/network';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/city';
 
 /** Request timeout in milliseconds */
@@ -45,20 +53,20 @@ function logApiError(city: string, error: Error): void {
 
 /**
  * Validate and normalize a city name input.
+ * Uses shared validation helpers from utils/network.ts.
+ *
+ * @param city - The city name to validate
+ * @returns The validated (trimmed) city name
  * @throws Error if city is invalid
  */
 function validateCity(city: string): string {
-  if (typeof city !== 'string') {
-    throw new Error('City must be a string.');
+  if (!isNonEmptyString(city)) {
+    throw new Error('City name cannot be empty.');
   }
 
   const trimmed = city.trim();
 
-  if (trimmed.length === 0) {
-    throw new Error('City name cannot be empty.');
-  }
-
-  if (trimmed.length > 168) {
+  if (!isValidLength(trimmed, 168)) {
     throw new Error('City name must be 168 characters or less.');
   }
 
@@ -66,17 +74,17 @@ function validateCity(city: string): string {
 }
 
 
+// ── Error handling ──────────────────────────────────────────────
+
 /**
- * Wraps a Promise with a timeout. Rejects if the operation takes too long.
+ * Extract error message and log it (dev-only).
+ * Wraps the shared extractErrorMessage utility with API-specific logging.
  */
-async function withTimeout<T>(
-  promise: Promise<T>,
-  timeoutMs: number
-): Promise<T> {
-  const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('Request timed out.')), timeoutMs)
-  );
-  return Promise.race([promise, timeoutPromise]);
+function handleApiError(city: string, err: unknown): Error {
+  const message = extractErrorMessage(err, 'An error occurred.');
+  const error = new Error(message);
+  logApiError(city, error);
+  return error;
 }
 
 
@@ -113,21 +121,13 @@ export async function fetchCityData(city: string): Promise<CityResponse> {
     // Check HTTP status
     if (!res.ok) {
       const errorMsg = (data as CityErrorResponse).error ?? 'An error occurred.';
-      const error = new Error(errorMsg);
-      logApiError(validCity, error);
-      throw error;
+      throw handleApiError(validCity, new Error(errorMsg));
     }
 
     logApiSuccess(validCity, data as CityResponse);
     return data as CityResponse;
   } catch (err) {
-    // Re-throw with context if it's already an Error
-    if (err instanceof Error) {
-      throw err;
-    }
-    // Otherwise wrap unknown errors
-    const wrappedError = new Error('Unknown error occurred.');
-    logApiError(validCity, wrappedError);
-    throw wrappedError;
+    // Use shared error extraction, then log and re-throw
+    throw handleApiError(validCity, err);
   }
 }
